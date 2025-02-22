@@ -1,0 +1,9 @@
+.ipynb_checkpoints/
+
+# UTILITY FILES
+
+# AUXILIARY FILES
+__pycache__/
+modules/credentials.txt
+logfile.log
+projenv/
