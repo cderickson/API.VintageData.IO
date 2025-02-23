@@ -1,5 +1,6 @@
 Flask==3.1.0
-Markdown==3.7
+flask_limiter==3.10.1
+Flask_Stats==1.0.1
 pandas==2.2.3
 psycopg2_binary==2.9.10
 python-dotenv==1.0.1
