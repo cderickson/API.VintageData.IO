@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project is an ETL (Extract, Transform, Load) pipeline designed to process match results for Vintage tournaments on Magic Online (MTGO). The pipeline pulls data from a public Google Sheet, cleans and transforms it, then loads it into a PostgreSQL database. The processed data is then used to support a public REST API for community access and data analysis.
+This project is an ETL (Extract, Transform, Load) pipeline designed to process match results for Vintage tournaments on Magic Online (MTGO).
 
 ## Process
 
@@ -11,7 +11,7 @@ This project is an ETL (Extract, Transform, Load) pipeline designed to process m
 - **Load** structured data into a PostgreSQL database.
 - **Deploy** a public REST API for querying tournament results and statistics.
 
-## Data Sources
+## Data Source
 
 - [**Google Sheet Link**](https://docs.google.com/spreadsheets/d/1wxR3iYna86qrdViwHjUPzHuw6bCNeMLb72M25hpUHYk/edit?gid=1611466830#gid=1611466830): Community-collated tournament results, matchups, and deck archetypes.
 
@@ -32,16 +32,14 @@ The [**Data Dictionary**](https://github.com/cderickson/Vintage-Metagame-API/wik
 
 ## Deployment & Architecture
 
-This project is deployed in AWS and operates using the following services:
+This project is deployed in AWS using an EC2 instance and Amazon RDS (PostgreSQL) database.
 
 ### **ETL Pipeline Execution**
-- **AWS Lambda**: The ETL script runs as a scheduled Lambda function.
-- **Amazon EventBridge**: A weekly scheduled rule triggers the Lambda function to refresh the data.
+The ETL code is stored as a Python script and scheduled to run weekly using cron on an EC2 instance. The script pulls data from a public Google Sheet, cleans and transforms it, and then loads it into a PostgreSQL database hosted on Amazon RDS.
 
 ### **API Deployment**
-- **AWS Lambda**: A separate Lambda function serves as the backend for the REST API.
-- **Amazon API Gateway**: Provides an HTTP endpoint for querying processed tournament data.
+The REST API was developed using Flask and is deployed using an EC2 instance, which is configured to serve requests through Nginx and Gunicorn. The API provides HTTP endpoints for querying processed match results and event data.
 
 ### **Infrastructure Diagram**
 
-Google Sheets → AWS Lambda (ETL) → PostgreSQL (RDS) → AWS Lambda (API) → API Gateway → Users
+Google Sheets → Python ETL Script (EC2) → PostgreSQL (RDS) → REST API (EC2, Flask) → Nginx & Gunicorn → Users
