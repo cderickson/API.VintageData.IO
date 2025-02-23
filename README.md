@@ -9,7 +9,7 @@ This project is an ETL (Extract, Transform, Load) pipeline designed to process m
 - **Extract** data from a publicly maintained Google Sheet.
 - **Clean & Transform** tournament results, matchups, and deck information.
 - **Load** structured data into a PostgreSQL database.
-- **Support** a public REST API for querying tournament results and statistics.
+- **Deploy** a public REST API for querying tournament results and statistics.
 
 ## Data Sources
 
@@ -26,6 +26,7 @@ The data is loaded into a PostgreSQL database with the following tables:
 - **VALID_DECKS**: Classification table storing valid deck archetypes.
 - **VALID_EVENT_TYPES**: Classification table containing valid event type names.
 - **LOAD_REPORTS**: Logs ETL process execution details.
+- **API_LOGGING_STATS**: Logs API endpoint usage statistics.
 
 The [**Data Dictionary**](https://github.com/cderickson/Vintage-Metagame-API/wiki/Data-Dictionary) contains feature definitions.
 
