@@ -6,10 +6,18 @@ This project is an ETL (Extract, Transform, Load) pipeline designed to process m
 
 ## Process
 
-- **Extract** data from a publicly maintained Google Sheet.
-- **Clean & Transform** tournament results, matchups, and deck information.
-- **Load** structured data into a PostgreSQL database.
-- **Deploy** a public REST API for querying tournament results and statistics.
+- **<ins>Extract</ins>** data from a publicly maintained Google Sheet.
+- **<ins>Clean & Transform</ins>** tournament results, matchups, and deck information.
+- **<ins>Load</ins>** structured data into a PostgreSQL database.
+- **<ins>Deploy</ins>** a public REST API for querying match results and event information.
+
+The ETL code is stored as a Python script and scheduled to run weekly using **cron** on an **EC2 instance**. The script pulls data from a public Google Sheet, cleans and transforms it, and then loads it into a **PostgreSQL** database hosted on **Amazon RDS**.
+
+## Architecture
+
+This project is deployed in **AWS** using an **EC2 instance** and **Amazon RDS** (**PostgreSQL**) database.
+
+Google Sheets → Python ETL Script (EC2) → PostgreSQL (RDS) → REST API (EC2, Flask) → Nginx & Gunicorn → Users
 
 ## Data Source
 
@@ -28,18 +36,10 @@ The data is loaded into a PostgreSQL database with the following tables:
 - **LOAD_REPORTS**: Logs ETL process execution details.
 - **API_LOGGING_STATS**: Logs API endpoint usage statistics.
 
-The [**Data Dictionary**](https://github.com/cderickson/Vintage-Metagame-API/wiki/Data-Dictionary) contains feature definitions.
+See [**Data Dictionary**](https://github.com/cderickson/Vintage-Metagame-API/wiki/Data-Dictionary) for feature definitions.
 
-## Deployment & Architecture
+## **API Deployment**
 
-This project is deployed in AWS using an EC2 instance and Amazon RDS (PostgreSQL) database.
+A **REST API** was developed using **Flask** and deployed using an **EC2 instance**, which is configured to serve requests through **Nginx** and **Gunicorn**. The API provides HTTP endpoints for querying processed match results and event data.
 
-### **ETL Pipeline Execution**
-The ETL code is stored as a Python script and scheduled to run weekly using cron on an EC2 instance. The script pulls data from a public Google Sheet, cleans and transforms it, and then loads it into a PostgreSQL database hosted on Amazon RDS.
-
-### **API Deployment**
-The REST API was developed using Flask and is deployed using an EC2 instance, which is configured to serve requests through Nginx and Gunicorn. The API provides HTTP endpoints for querying processed match results and event data.
-
-### **Infrastructure Diagram**
-
-Google Sheets → Python ETL Script (EC2) → PostgreSQL (RDS) → REST API (EC2, Flask) → Nginx & Gunicorn → Users
+See [**API Documentation**](https://github.com/cderickson/MTGO-Vintage-Metagame-Data/wiki/API-Documentation) for API Endpoint usage instructions.
