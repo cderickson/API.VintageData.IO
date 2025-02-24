@@ -1,4 +1,4 @@
-# MTGO Vintage Metagame Data
+# API.VintageData.IO
 
 ## Overview
 
