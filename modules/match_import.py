@@ -33,7 +33,6 @@ def read_credentials():
         return [line.strip() for line in file]
     
 def get_df(query, vars=()):
-    # credentials = read_credentials()
     conn = psycopg2.connect(
         host=credentials[0],
         port=credentials[1],
@@ -50,7 +49,6 @@ def get_df(query, vars=()):
 
 def delete_records(start_date, end_date):
     try:
-        # credentials = read_credentials()
         conn = psycopg2.connect(
             host=credentials[0],
             port=credentials[1],
@@ -78,7 +76,6 @@ def delete_records(start_date, end_date):
 
 def parse_matchup_sheet(start_date=None,end_date=None):
     def get_max_id():
-        # credentials = read_credentials()
         conn = psycopg2.connect(
             host=credentials[0],
             port=credentials[1],
@@ -317,7 +314,6 @@ def match_insert(df_matches=None, df_events=None, start_date=None, end_date=None
     event_id_rej = set()
     match_id_rej = set()
     try:
-        # credentials = read_credentials()
         conn = psycopg2.connect(
             host=credentials[0],
             port=credentials[1],
@@ -405,7 +401,7 @@ def match_insert(df_matches=None, df_events=None, start_date=None, end_date=None
                 values_list.append((row.EVENT_ID, row.EVENT_DATE, row.EVENT_TYPE_ID, proc_dt))
 
             for values in values_list:
-                print(values)
+                # print(values)
                 try:
                     cursor.execute(events_query, values)
                     if cursor.rowcount == 0:
@@ -442,7 +438,7 @@ def match_insert(df_matches=None, df_events=None, start_date=None, end_date=None
                     row.P2_DECK_ID, row.P1_NOTE, row.P2_NOTE, row.EVENT_ID, proc_dt))
 
             for values in values_list:
-                print(values)
+                # print(values)
                 try:
                     cursor.execute(matches_query, values)
                     if cursor.rowcount == 0:
@@ -488,7 +484,6 @@ def insert_load_stats(load_report,event_rej,match_rej):
     match_count = 0
     load_rpt_id = 0
     try:
-        # credentials = read_credentials()
         conn = psycopg2.connect(
             host=credentials[0],
             port=credentials[1],
@@ -499,7 +494,7 @@ def insert_load_stats(load_report,event_rej,match_rej):
         )
         cursor = conn.cursor()
 
-        print(f"Load Report: {load_report}")
+        # print(f"Load Report: {load_report}")
         # Insert load report.
         try:
             cursor.execute(load_report_query, tuple(load_report))

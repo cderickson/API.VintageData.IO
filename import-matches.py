@@ -7,6 +7,8 @@ warnings.filterwarnings('ignore', category=UserWarning, message="pandas only sup
 
 start_time = time.time()
 
+print('Start Time: ' + datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
 # Day 0 is 8-25-2024.
 if len(sys.argv) > 1:
     start_date = datetime.strptime(sys.argv[1], '%Y-%m-%d').date()

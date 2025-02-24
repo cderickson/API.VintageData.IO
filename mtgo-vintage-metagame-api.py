@@ -13,8 +13,8 @@ credentials = [os.getenv("DB_HOST"), os.getenv("DB_PORT"), os.getenv("DB_USER"),
 
 app = Flask(__name__)
 stats = Stats(app)
-limiter = Limiter(app, key_func=get_remote_address)
-limiter.limit("100 per minute")
+limiter = Limiter(key_func=get_remote_address, default_limits=['100 per minute'])
+limiter.init_app(app)
 
 app.json.sort_keys = False
 page_size = 1000
@@ -339,6 +339,7 @@ def get_events_by_pid(P1):
     ) x 
     WHERE x."EVENT_DATE" >= %s AND x."EVENT_DATE" <= %s
     GROUP BY x."EVENT_ID", x."EVENT_DATE", x."FORMAT", x."EVENT_TYPE"
+    ORDER BY x."EVENT_ID" DESC
     LIMIT %s OFFSET %s
     '''
 
