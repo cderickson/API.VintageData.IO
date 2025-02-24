@@ -43,3 +43,9 @@ See [**Data Dictionary**](https://github.com/cderickson/Vintage-Metagame-API/wik
 A **REST API** was developed using **Flask** and deployed using an **EC2 instance**, which is configured to serve requests through **Nginx** and **Gunicorn**. The API provides HTTP endpoints for querying processed match results and event data.
 
 See [**API Documentation**](https://github.com/cderickson/MTGO-Vintage-Metagame-Data/wiki/API-Documentation) for API Endpoint usage instructions.
+
+<br>
+
+<p align="center">
+<img src="https://github.com/cderickson/MTGO-Vintage-Metagame-Data/blob/main/api.png?raw=true">
+</p>
