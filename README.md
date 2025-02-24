@@ -25,7 +25,7 @@ Google Sheets → Python ETL Script (EC2) → PostgreSQL (RDS) → REST API (EC2
 
 ## Database Schema
 
-The data is loaded into a PostgreSQL database with the following tables:
+The data is loaded into a **PostgreSQL** database with the following tables:
 
 - **EVENTS**: Captures individual tournament events.
 - **EVENT_REJECTIONS**: Tracks rejected events and reason text.
