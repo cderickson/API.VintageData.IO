@@ -21,7 +21,7 @@ Google Sheets → Python ETL Script (EC2) → PostgreSQL (RDS) → REST API (EC2
 
 ## Data Source
 
-- [**Google Sheet Link**](https://docs.google.com/spreadsheets/d/1wxR3iYna86qrdViwHjUPzHuw6bCNeMLb72M25hpUHYk/edit?gid=1611466830#gid=1611466830): Community-collated tournament results, matchups, and deck archetypes.
+[**Google Sheet Link**](https://docs.google.com/spreadsheets/d/1wxR3iYna86qrdViwHjUPzHuw6bCNeMLb72M25hpUHYk/edit?gid=1611466830#gid=1611466830): Community-collated tournament results, matchups, and deck archetypes.
 
 ## Database Schema
 
