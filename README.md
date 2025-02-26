@@ -17,7 +17,9 @@ The ETL code is stored as a Python script and scheduled to run weekly using **cr
 
 This project is deployed in **AWS** using an **EC2 instance** and **Amazon RDS** (**PostgreSQL**) database.
 
-Google Sheets → Python ETL Script (EC2) → PostgreSQL (RDS) → REST API (EC2, Flask) → Nginx & Gunicorn → Users
+<p align="center">
+<img src="https://github.com/cderickson/API.VintageData.IO/blob/main/arch.jpg?raw=true">
+</p>
 
 ## Data Source
 
@@ -38,6 +40,10 @@ The data is loaded into a **PostgreSQL** database with the following tables:
 
 See [**Data Dictionary**](https://github.com/cderickson/Vintage-Metagame-API/wiki/Data-Dictionary) for feature definitions.
 
+<p align="center">
+<img src="https://github.com/cderickson/API.VintageData.IO/blob/main/erd.jpg?raw=true">
+</p>
+
 ## **API Deployment**
 
 A **REST API** was developed using **Flask** and deployed using an **EC2 instance**, which is configured to serve requests through **Nginx** and **Gunicorn**. The API provides HTTP endpoints for querying processed match results and event data.
@@ -45,7 +51,3 @@ A **REST API** was developed using **Flask** and deployed using an **EC2 instanc
 See [**API Documentation**](https://github.com/cderickson/MTGO-Vintage-Metagame-Data/wiki/API-Documentation) for API Endpoint usage instructions.
 
 <br>
-
-<p align="center">
-<img src="https://github.com/cderickson/MTGO-Vintage-Metagame-Data/blob/main/api.png?raw=true">
-</p>
