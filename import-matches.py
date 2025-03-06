@@ -18,9 +18,9 @@ else:
 
 end_date = start_date + timedelta(days=7)
 
-df_matches, df_events, load_rep_list, event_skipped_rej = mi.parse_matchup_sheet(start_date=start_date, end_date=end_date)
+df_matches, df_events, df_standings, load_rep_list, event_skipped_rej = mi.parse_matchup_sheet(start_date=start_date, end_date=end_date)
 # mi.test(df_matches, df_events)
-load_rep_ins, event_rej, match_rej = mi.match_insert(df_matches, df_events, start_date=start_date, end_date=end_date)
+load_rep_ins, event_rej, match_rej = mi.match_insert(df_matches, df_events, df_standings, start_date=start_date, end_date=end_date)
 
 load_report = [start_date,end_date - timedelta(days=1)] + load_rep_list + load_rep_ins
 mi.insert_load_stats(load_report, event_skipped_rej + event_rej, match_rej)

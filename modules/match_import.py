@@ -8,12 +8,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 credentials = [os.getenv("DB_HOST"), os.getenv("DB_PORT"), os.getenv("DB_USER"), os.getenv("DB_PASSWORD"), os.getenv("DB_NAME")]
-gsheets = [os.getenv("VINTAGE_SHEET_CURR"), os.getenv("VINTAGE_SHEET_ARCHIVE"), os.getenv("VINTAGE_GID_MATCHES"), os.getenv("VINTAGE_GID_DECK")]
+gsheets = [os.getenv("VINTAGE_SHEET_CURR"), os.getenv("VINTAGE_SHEET_ARCHIVE"), os.getenv("VINTAGE_GID_MATCHES"), os.getenv("VINTAGE_GID_DECK"), os.getenv('VINTAGE_GID_STANDINGS')]
 
 sheet_curr = '1wxR3iYna86qrdViwHjUPzHuw6bCNeMLb72M25hpUHYk'
 sheet_archive = '1PxNYGMXaVrRqI0uyMQF46K7nDEG16WnDoKrFyI_qrvE'
 gid_matches = '2141931777'
 gid_deck = '590005429'
+gid_standings = '1693401931'
 
 warnings.filterwarnings('ignore', category=UserWarning, message="pandas only supports SQLAlchemy connectable")
 
@@ -74,7 +75,37 @@ def delete_records(start_date, end_date):
             cursor.close()
             conn.close()
 
-def parse_matchup_sheet(start_date=None,end_date=None):
+def parse_matchup_sheet(start_date=None,end_date=None):  
+    def get_top8(df):
+            if 'Player' in df.columns:
+                return set(df.sort_values(by=['total_matches'], ascending=False)['Player'].iloc[:8])
+            elif 'P1' in df.columns:
+                return set(df.sort_values(by=['total_matches'], ascending=False)['P1'].iloc[:8])
+    
+    def get_event_info_dict():
+        sheet_url = f'https://docs.google.com/spreadsheets/d/{gsheets[0]}/export?format=csv&gid={gsheets[4]}'
+        df1 = pd.read_csv(sheet_url)
+        df1['Date'] = pd.to_datetime(df1['Date'], format='%m/%d/%y')
+        df1['total_matches'] = df1[['Wins', 'Losses']].fillna(0).sum(axis=1).astype(int)
+
+        event_info_dict = {}
+
+        breakpoints = []
+        for index, row in df1[df1['Rank'] == 1].iterrows():
+            breakpoints.append(index)
+        breakpoints.append(len(df1))
+
+        index = 0
+        for i in breakpoints[1:]:
+            event_date = df1.iloc[index:i].Date.max()
+            if event_date not in event_info_dict:
+                event_info_dict[event_date] = []
+            event_info_dict[event_date].append(
+                (df1.iloc[index:i].Type.max(), get_top8(df1.iloc[index:i]), df1.iloc[index:i][['Player','Bye','Rank']])
+            )
+            index = i
+        return event_info_dict    
+
     def get_max_id():
         conn = psycopg2.connect(
             host=credentials[0],
@@ -109,7 +140,9 @@ def parse_matchup_sheet(start_date=None,end_date=None):
         conn.close()
         return max_event_id, max_match_id
 
-    def abstract_events(df_events,format):
+    def abstract_events(matches, df_events, format):
+        event_info_dict = get_event_info_dict()
+
         query = """
             SELECT *
             FROM "VALID_EVENT_TYPES"
@@ -118,13 +151,30 @@ def parse_matchup_sheet(start_date=None,end_date=None):
         df_event_types = get_df(query,(format,))
         invalid_code = df_event_types.loc[(df_event_types['EVENT_TYPE'] == 'INVALID_TYPE'), 'EVENT_TYPE_ID'].iloc[0]
 
-        df = pd.merge(left=df_events, right=df_event_types, left_on=['EVENT_TYPE'], right_on=['EVENT_TYPE'], how='left')
+        df = df_events.copy()
+        df_standings = pd.DataFrame(columns=['EVENT_ID','Player','Bye','Rank'])
+
+        matches_grouped = matches.groupby(['EVENT_ID', 'P1']).agg({'MATCH_ID':'count'}).reset_index()
+        matches_grouped = matches_grouped.rename(columns={'MATCH_ID':'total_matches'})
+
+        for index, row in df.iterrows():
+            top8 = get_top8(matches_grouped[(matches_grouped.EVENT_ID == row['EVENT_ID'])])
+            if row['EVENT_DATE'] in event_info_dict:
+                for i in event_info_dict[row['EVENT_DATE']]:
+                    if (len(i[1].intersection(top8)) >= 6) and (len(i[2]) == len(matches_grouped)):
+                        df_standings = pd.concat([df_standings, i[2].assign(EVENT_ID=row['EVENT_ID'])], ignore_index=True)
+                        df.loc[index, 'EVENT_TYPE'] = i[0].upper()
+                        print('Overwriting ' + str(row['EVENT_ID']) + ': ' + i[0].upper())
+                        break
+            
+        df = pd.merge(left=df, right=df_event_types, left_on=['EVENT_TYPE'], right_on=['EVENT_TYPE'], how='left')
 
         df['EVENT_TYPE_ID'] = df['EVENT_TYPE_ID'].fillna(invalid_code)
+        df_standings = df_standings.rename(columns={'Player':'P1', 'Bye':'BYES', 'Rank':'EVENT_RANK'})
 
-        return df[['EVENT_ID','EVENT_DATE','EVENT_TYPE_ID']]
+        return (df[['EVENT_ID','EVENT_DATE','EVENT_TYPE_ID']], df_standings)
 
-    def abstract_decks(df_matches,format):
+    def abstract_decks(df_matches, format):
         query = """
             SELECT *
             FROM "VALID_DECKS"
@@ -155,7 +205,7 @@ def parse_matchup_sheet(start_date=None,end_date=None):
         )
 
         return df[['MATCH_ID','P1','P2','P1_WINS','P2_WINS','MATCH_WINNER','P1_DECK_ID','P2_DECK_ID','P1_NOTE','P2_NOTE','EVENT_ID']]
-    
+
     event_id_start, match_id_start = get_max_id()
     skipped_events_rej = []
     
@@ -261,9 +311,12 @@ def parse_matchup_sheet(start_date=None,end_date=None):
     # Total records processed (for Load Report).
     records_proc = df.shape[0]
 
-    return abstract_decks(df,'VINTAGE'), abstract_events(df_events,'VINTAGE'), [records_full_ds,records_total,events_ignored,records_proc], skipped_events_rej
+    df = abstract_decks(df,'VINTAGE')
+    df_events, df_standings = abstract_events(df, df_events,'VINTAGE')
 
-def match_insert(df_matches=None, df_events=None, start_date=None, end_date=None):
+    return df, df_events, df_standings, [records_full_ds,records_total,events_ignored,records_proc], skipped_events_rej
+
+def match_insert(df_matches=None, df_events=None, df_standings=None, start_date=None, end_date=None):
     def check_and_append_match(condition, message, severity='E'):
         if condition:
             match_rej.append(
@@ -290,6 +343,18 @@ def match_insert(df_matches=None, df_events=None, start_date=None, end_date=None
                 values_list.append((row.EVENT_ID, row.EVENT_DATE, row.EVENT_TYPE_ID, proc_dt))
             return True
         return False
+    
+    def check_and_append_standing(condition, message, severity='E'):
+        if condition:
+            standing_rej.append(
+                (row.EVENT_ID, row.P1, row.BYES, row.EVENT_RANK, proc_dt, severity, message)
+            )
+            if severity == 'E':
+                pass
+            elif severity == 'W':
+                values_list.append((row.EVENT_ID, row.P1, row.BYES, row.EVENT_RANK, proc_dt))
+            return True
+        return False
 
     events_query = """
         INSERT INTO "EVENTS" ("EVENT_ID", "EVENT_DATE", "EVENT_TYPE_ID", "PROC_DT")
@@ -303,12 +368,22 @@ def match_insert(df_matches=None, df_events=None, start_date=None, end_date=None
         ON CONFLICT ("MATCH_ID", "P1") 
         DO NOTHING
     """
+    standings_query = """
+        INSERT INTO "EVENT_STANDINGS" ("EVENT_ID", "P1", "BYES", "EVENT_RANK", "PROC_DT")
+        VALUES (%s, %s, %s, %s, %s)
+        ON CONFLICT ("EVENT_ID", "EVENT_RANK")
+        DO NOTHING
+    """
+
     matches_inserted = 0
     matches_skipped = 0
     events_inserted = 0
     events_skipped = 0
+    standings_inserted = 0
+    standings_skipped = 0
     event_rej = []
     match_rej = []
+    standing_rej = []
     events_deleted = 0
     matches_deleted = 0
     event_id_rej = set()
@@ -340,12 +415,23 @@ def match_insert(df_matches=None, df_events=None, start_date=None, end_date=None
             matches_deleted = cursor.fetchone()[0]
 
             query2 = """
+                SELECT COUNT(*) FROM "EVENT_STANDINGS"
+                WHERE "EVENT_ID" IN (
+                    SELECT "EVENT_ID" FROM "EVENTS"
+                    WHERE "EVENT_DATE" >= %s AND "EVENT_DATE" < %s
+                )
+            """
+            cursor.execute(query2, (start_date, end_date))
+            standings_deleted = cursor.fetchone()[0]
+
+            query3 = """
                 DELETE FROM "EVENTS"
                 WHERE "EVENT_DATE" >= %s AND "EVENT_DATE" < %s
                 RETURNING "EVENT_ID";
             """
-            cursor.execute(query2, (start_date, end_date))
+            cursor.execute(query3, (start_date, end_date))
             events_deleted = len(cursor.fetchall())
+
         except Exception as e:
             print(f"Error deleting records: {e}")
             traceback.print_exc() 
@@ -383,10 +469,7 @@ def match_insert(df_matches=None, df_events=None, start_date=None, end_date=None
                 conn.close()
             return [0,0,0,0,0,0,str(e),proc_dt],[],[]
 
-        # print(na_event_type_id)
-        # print(na_deck_id)
-
-        # Insert events
+        # Insert events.
         if df_events is not None:
             values_list = []  
             for row in df_events.itertuples(index=False):
@@ -416,7 +499,7 @@ def match_insert(df_matches=None, df_events=None, start_date=None, end_date=None
                     event_rej.append(values + ('E',str(e)))
                     continue
 
-        # Insert matches
+        # Insert matches.
         if df_matches is not None:
             values_list = []
             for row in df_matches.itertuples(index=False):
@@ -452,6 +535,36 @@ def match_insert(df_matches=None, df_events=None, start_date=None, end_date=None
                     matches_skipped += 1
                     match_rej.append(values + ('E', str(e)))
                     continue
+        
+        # Insert event standings.
+        if df_standings is not None:
+            values_list = []
+            for row in df_standings.itertuples(index=False):
+                # Check business rules here.
+                if any(
+                    check_and_append_standing(condition, message, severity)
+                    for condition, message, severity in [
+                        # enter conditions
+                    ]):
+                    continue
+
+                values_list.append((row.EVENT_ID, row.P1, row.BYES, row.EVENT_RANK, proc_dt))
+            for values in values_list:
+                print(values)
+                try:
+                    cursor.execute(standings_query, values)
+                    if cursor.rowcount == 0:
+                        print(f"Skipped (duplicate): {values}")
+                        standings_skipped += 1
+                        standing_rej.append(values + ('E', 'Duplicate'))
+                    else:
+                        standings_inserted += 1
+                except Exception as e:
+                    print(f"Error inserting row into EVENT_STANDINGS: {values} | Error: {e}")
+                    standings_skipped += 1
+                    standing_rej.append(values + ('E', str(e)))
+                    continue
+
         conn.commit()
     except Exception as e:
         print(f"Database connection error: {e}")

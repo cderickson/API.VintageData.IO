@@ -80,7 +80,7 @@ def update_status_code(response):
 
 @app.route('/')
 def home():   
-    return redirect('https://github.com/cderickson/MTGO-Vintage-Metagame-Data', code=301)
+    return redirect('https://cderickson.io/vintage-data/', code=301)
 
 @app.route('/matches/', methods=['GET'], strict_slashes=False)
 def get_matches():
