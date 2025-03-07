@@ -301,6 +301,34 @@ def get_event_id(event_id):
     conn.close()
     return jsonify(results)
 
+@app.route('/events/<int:event_id>/standings/', methods=['GET'], strict_slashes=False)
+def get_event_ranks(event_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    rank = request.args.get('rank', 1)
+
+    try:
+        rank = int(rank)
+    except ValueError:
+        return jsonify({"error": "Invalid URL Parameter Format."}), 400
+    
+    if rank < 0:
+        return jsonify({"error": "Invalid URL Parameter Format."}), 400
+    
+    query = '''
+
+    '''
+
+    cursor.execute(query, ())
+
+    column_names = [desc[0] for desc in cursor.description]
+    data = cursor.fetchall()
+    results = [dict(zip(column_names, row)) for row in data]
+
+    conn.close()
+    return jsonify(results)
+
 @app.route('/events/player/<string:P1>/', methods=['GET'], strict_slashes=False)
 def get_events_by_pid(P1):
     conn = get_db_connection()

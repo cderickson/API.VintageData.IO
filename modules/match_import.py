@@ -87,6 +87,7 @@ def parse_matchup_sheet(start_date=None,end_date=None):
         df1 = pd.read_csv(sheet_url)
         df1['Date'] = pd.to_datetime(df1['Date'], format='%m/%d/%y')
         df1['total_matches'] = df1[['Wins', 'Losses']].fillna(0).sum(axis=1).astype(int)
+        df1['Bye'] = df1['Bye'].fillna(0).astype(int)
 
         event_info_dict = {}
 
@@ -160,12 +161,15 @@ def parse_matchup_sheet(start_date=None,end_date=None):
         for index, row in df.iterrows():
             top8 = get_top8(matches_grouped[(matches_grouped.EVENT_ID == row['EVENT_ID'])])
             if row['EVENT_DATE'] in event_info_dict:
-                for i in event_info_dict[row['EVENT_DATE']]:
-                    if (len(i[1].intersection(top8)) >= 6) and (len(i[2]) == len(matches_grouped)):
-                        df_standings = pd.concat([df_standings, i[2].assign(EVENT_ID=row['EVENT_ID'])], ignore_index=True)
+                for index,i in enumerate(event_info_dict[row['EVENT_DATE']]):
+                    if (len(i[1].intersection(top8)) >= 6):
                         df.loc[index, 'EVENT_TYPE'] = i[0].upper()
                         print('Overwriting ' + str(row['EVENT_ID']) + ': ' + i[0].upper())
+                        df_standings = pd.concat([df_standings, i[2].assign(EVENT_ID=row['EVENT_ID'])], ignore_index=True)
+                        print('Adding ranks: ' + str(row['EVENT_ID']))
                         break
+                    if (index == len(event_info_dict[row['EVENT_DATE']]) - 1):
+                        event_standings_skipped += len(i[2])
             
         df = pd.merge(left=df, right=df_event_types, left_on=['EVENT_TYPE'], right_on=['EVENT_TYPE'], how='left')
 
@@ -288,10 +292,6 @@ def parse_matchup_sheet(start_date=None,end_date=None):
     df['MATCH_WINNER'] = df.apply(lambda row: 'P1' if ((row['WINNER1'] == 1) & (row['WINNER2'] == 0)) else ('P2' if ((row['WINNER1'] == 0) & (row['WINNER2'] == 1)) else 'NA'), axis=1)
     df.drop(columns=['WINNER1','WINNER2'],inplace=True)
 
-    # Make these kind of corrections post-ETL.
-    # EVENT_ID 1000067 should be OTHER.
-    # df.loc[df['EVENT_ID'] == 1000067,'EVENT_TYPE'] = 'OTHER'.
-
     # Convert P1/P2_WINS from float to int.
     df['P1_WINS'] = df['P1_WINS'].astype(int)
     df['P2_WINS'] = df['P2_WINS'].astype(int)
@@ -311,12 +311,14 @@ def parse_matchup_sheet(start_date=None,end_date=None):
     # Total records processed (for Load Report).
     records_proc = df.shape[0]
 
+    standings_skipped = 0
+
     df = abstract_decks(df,'VINTAGE')
     df_events, df_standings = abstract_events(df, df_events,'VINTAGE')
 
-    return df, df_events, df_standings, [records_full_ds,records_total,events_ignored,records_proc], skipped_events_rej
+    return df, df_events, df_standings, [records_full_ds,records_total,events_ignored,records_proc], skipped_events_rej, standings_skipped
 
-def match_insert(df_matches=None, df_events=None, df_standings=None, start_date=None, end_date=None):
+def match_insert(df_matches=None, df_events=None, df_standings=None, standings_skipped=0, start_date=None, end_date=None):
     def check_and_append_match(condition, message, severity='E'):
         if condition:
             match_rej.append(
@@ -380,7 +382,7 @@ def match_insert(df_matches=None, df_events=None, df_standings=None, start_date=
     events_inserted = 0
     events_skipped = 0
     standings_inserted = 0
-    standings_skipped = 0
+    # standings_skipped = 0
     event_rej = []
     match_rej = []
     standing_rej = []
@@ -537,6 +539,7 @@ def match_insert(df_matches=None, df_events=None, df_standings=None, start_date=
                     continue
         
         # Insert event standings.
+        # print(df_standings)
         if df_standings is not None:
             values_list = []
             for row in df_standings.itertuples(index=False):
@@ -544,13 +547,14 @@ def match_insert(df_matches=None, df_events=None, df_standings=None, start_date=
                 if any(
                     check_and_append_standing(condition, message, severity)
                     for condition, message, severity in [
-                        # enter conditions
+                        ((row.EVENT_RANK < 1), 'EVENT_RANK out of range.', 'E'),
+                        ((row.EVENT_RANK > len(df_standings)), 'EVENT_RANK out of range.', 'E')
                     ]):
                     continue
 
                 values_list.append((row.EVENT_ID, row.P1, row.BYES, row.EVENT_RANK, proc_dt))
             for values in values_list:
-                print(values)
+                # print(values)
                 try:
                     cursor.execute(standings_query, values)
                     if cursor.rowcount == 0:
@@ -575,13 +579,15 @@ def match_insert(df_matches=None, df_events=None, df_standings=None, start_date=
         if conn:
             cursor.close()
             conn.close()
-        return [matches_deleted, matches_inserted, matches_skipped, events_deleted, events_inserted, events_skipped, None, proc_dt], event_rej, match_rej
+        return [matches_deleted, matches_inserted, matches_skipped, events_deleted, events_inserted, events_skipped, 
+                standings_deleted, standings_inserted, standings_skipped, None, proc_dt], event_rej, match_rej, standing_rej
 
-def insert_load_stats(load_report,event_rej,match_rej):
+def insert_load_stats(load_report,event_rej,match_rej,standing_rej):
     load_report_query = """
         INSERT INTO "LOAD_REPORTS" ("START_DATE", "END_DATE", "RECORDS_FULL_DS", "RECORDS_TOTAL", "EVENTS_IGNORED", "RECORDS_PROC",
-            "MATCHES_DELETED", "MATCHES_INSERTED", "MATCHES_SKIPPED", "EVENTS_DELETED", "EVENTS_INSERTED", "EVENTS_SKIPPED", "DB_CONN_ERROR_TEXT", "PROC_DT")
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            "MATCHES_DELETED", "MATCHES_INSERTED", "MATCHES_SKIPPED", "EVENTS_DELETED", "EVENTS_INSERTED", "EVENTS_SKIPPED", 
+            "STANDINGS_DELETED", "STANDINGS_INSERTED", "STANDINGS_SKIPPED", "DB_CONN_ERROR_TEXT", "PROC_DT")
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING "LOAD_RPT_ID"
     """
     event_rej_query = """
@@ -592,6 +598,10 @@ def insert_load_stats(load_report,event_rej,match_rej):
         INSERT INTO "MATCH_REJECTIONS" ("LOAD_RPT_ID", "MATCH_ID", "P1", "P2", "P1_WINS", "P2_WINS", "MATCH_WINNER", "P1_DECK_ID",
             "P2_DECK_ID", "P1_NOTE", "P2_NOTE", "EVENT_ID", "PROC_DT", "REJ_TYPE", "MATCH_REJ_TEXT")
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """
+    standing_rej_query = """
+        INSERT INTO "RANK_REJECTIONS" ("LOAD_RPT_ID", "EVENT_ID", "P1", "BYES", "EVENT_RANK", "PROC_DT", "REJ_TYPE", "RANK_REJ_TEXT")
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """
     event_count = 0
     match_count = 0
@@ -635,6 +645,17 @@ def insert_load_stats(load_report,event_rej,match_rej):
                 match_count += 1
             except Exception as e:
                 print(f"Error inserting row into MATCH_REJECTIONS: {(load_rpt_id,) + values} | Error: {e}")
+                continue
+
+        # Insert Standing_Rejection.
+        print('Printing Rank Rejections:')
+        for values in standing_rej:
+            print(values)
+            try:
+                cursor.execute(standing_rej, (load_rpt_id,) + values)
+                match_count += 1
+            except Exception as e:
+                print(f"Error inserting row into RANK_REJECTIONS: {(load_rpt_id,) + values} | Error: {e}")
                 continue
 
         conn.commit()
