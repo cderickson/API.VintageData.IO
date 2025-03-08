@@ -32,6 +32,8 @@ The data is loaded into a **PostgreSQL** database with the following tables:
 - **EVENTS**: Captures individual tournament events.
 - **EVENT_REJECTIONS**: Tracks rejected events and reason text.
 - **MATCHES**: Stores match results, player deck IDs, and outcomes.
+- **EVENT_STANDINGS**: Returns the final standings and player ranks of an event.
+- **RANK_REJECTIONS**: Tracks rejections event standings records and reason text.
 - **MATCH_REJECTIONS**: Tracks rejected matches and reason text.
 - **VALID_DECKS**: Classification table storing valid deck archetypes.
 - **VALID_EVENT_TYPES**: Classification table containing valid event type names.
