@@ -306,7 +306,7 @@ def get_event_ranks(event_id):
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    rank = request.args.get('rank', 1)
+    rank = request.args.get('rank', 0)
 
     try:
         rank = int(rank)
@@ -317,10 +317,66 @@ def get_event_ranks(event_id):
         return jsonify({"error": "Invalid URL Parameter Format."}), 400
     
     query = '''
-
+    SELECT e."EVENT_DATE", ves."EVENT_TYPE", es."EVENT_RANK", es."P1", a."WINS", a."LOSSES", es."BYES"
+    FROM "EVENTS" e 
+    JOIN "EVENT_STANDINGS" es 
+    ON es."EVENT_ID" = e."EVENT_ID"
+    JOIN "VALID_EVENT_TYPES" ves 
+    ON ves."EVENT_TYPE_ID" = e."EVENT_TYPE_ID"
+    JOIN 
+    (
+        SELECT "EVENT_ID", "P1", 
+            SUM(CASE WHEN "MATCH_WINNER" = 'P1' THEN 1 ELSE 0 END) AS "WINS", 
+            SUM(CASE WHEN "MATCH_WINNER" = 'P2' THEN 1 ELSE 0 END) AS "LOSSES"
+        FROM "MATCHES"
+        GROUP BY "EVENT_ID", "P1"
+    ) a
+    ON es."EVENT_ID" = a."EVENT_ID" AND es."P1" = a."P1"
+    WHERE es."EVENT_ID" = %s
     '''
 
-    cursor.execute(query, ())
+    if rank > 0:
+        query += ' AND es."EVENT_RANK" = %s'
+    query += ' ORDER BY es."EVENT_RANK" ASC'
+
+    if rank > 0:
+        cursor.execute(query, (event_id, rank))
+    else:
+        cursor.execute(query, (event_id, ))
+
+    column_names = [desc[0] for desc in cursor.description]
+    data = cursor.fetchall()
+    results = [dict(zip(column_names, row)) for row in data]
+
+    conn.close()
+    return jsonify(results)
+
+@app.route('/events/<int:event_id>/player/<string:P1>/', methods=['GET'], strict_slashes=False)
+def get_event_ranks_pid(event_id, P1):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+   
+    query = '''
+    SELECT e."EVENT_DATE", ves."EVENT_TYPE", es."EVENT_RANK", es."P1", a."WINS", a."LOSSES", es."BYES"
+    FROM "EVENTS" e 
+    JOIN "EVENT_STANDINGS" es 
+    ON es."EVENT_ID" = e."EVENT_ID"
+    JOIN "VALID_EVENT_TYPES" ves 
+    ON ves."EVENT_TYPE_ID" = e."EVENT_TYPE_ID"
+    JOIN 
+    (
+        SELECT "EVENT_ID", "P1", 
+            SUM(CASE WHEN "MATCH_WINNER" = 'P1' THEN 1 ELSE 0 END) AS "WINS", 
+            SUM(CASE WHEN "MATCH_WINNER" = 'P2' THEN 1 ELSE 0 END) AS "LOSSES"
+        FROM "MATCHES"
+        GROUP BY "EVENT_ID", "P1"
+    ) a
+    ON es."EVENT_ID" = a."EVENT_ID" AND es."P1" = a."P1"
+    WHERE es."EVENT_ID" = %s AND es."P1" = %s
+    ORDER BY es."EVENT_RANK" ASC
+    '''
+
+    cursor.execute(query, (event_id, P1))
 
     column_names = [desc[0] for desc in cursor.description]
     data = cursor.fetchall()
