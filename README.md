@@ -56,10 +56,10 @@ See [**API Documentation**](https://github.com/cderickson/MTGO-Vintage-Metagame-
 
 This [**Power BI dashboard**](https://cderickson.io/vintage-data/dashboard/) provides insights into the online Vintage metagame using our processed data. It includes:
 
-- Overall Metagame Trends – High-level analysis of deck popularity and performance.
-- Event Explorer – Detailed view of individual tournament results.
-- Player Leaderboard – Rankings based on player performance across events.
-- Deck Matchup Heatmap – Visualization of win rates between different deck archetypes.
+- **Overall Metagame Trends** – High-level analysis of deck popularity and performance.
+- **Event Explorer** – Detailed view of individual tournament results.
+- **Player Leaderboard** – Rankings based on player performance across events.
+- **Deck Matchup Heatmap** – Visualization of win rates between different deck archetypes.
 
 <p align="center">
 <img src="https://github.com/cderickson/API.VintageData.IO/blob/main/powerbi.jpg?raw=true">
