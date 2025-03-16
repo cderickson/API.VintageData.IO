@@ -163,7 +163,7 @@ def parse_matchup_sheet(start_date=None,end_date=None):
             if row['EVENT_DATE'] in event_info_dict:
                 for index,i in enumerate(event_info_dict[row['EVENT_DATE']]):
                     if (len(i[1].intersection(top8)) >= 6):
-                        df.loc[index, 'EVENT_TYPE'] = i[0].upper()
+                        df.loc[df['EVENT_ID'] == row['EVENT_ID'], 'EVENT_TYPE'] = i[0].upper()
                         print('Overwriting ' + str(row['EVENT_ID']) + ': ' + i[0].upper())
                         df_standings = pd.concat([df_standings, i[2].assign(EVENT_ID=row['EVENT_ID'])], ignore_index=True)
                         print('Adding ranks: ' + str(row['EVENT_ID']))
@@ -224,6 +224,9 @@ def parse_matchup_sheet(start_date=None,end_date=None):
 
     # Replace null values with 'NA' string.
     df.fillna({'P1_ARCH':'NA','P2_ARCH':'NA','P1_SUBARCH':'NA','P2_SUBARCH':'NA','P1_NOTE':'NA','P2_NOTE':'NA'}, inplace=True)
+
+    # Truncate player names longer than 30 characters.
+    # df['P1'] = df['P1'].apply(lambda x: x[:30] if isinstance(x, str) and len(x) > 30 else x)
 
     # Format EVENT_DATE column.
     df['EVENT_DATE'] = pd.to_datetime(df['EVENT_DATE'], yearfirst=False, format='mixed')
@@ -348,13 +351,16 @@ def match_insert(df_matches=None, df_events=None, df_standings=None, standings_s
     
     def check_and_append_standing(condition, message, severity='E'):
         if condition:
-            standing_rej.append(
-                (row.EVENT_ID, row.P1, row.BYES, row.EVENT_RANK, proc_dt, severity, message)
-            )
             if severity == 'E':
                 pass
             elif severity == 'W':
-                values_list.append((row.EVENT_ID, row.P1, row.BYES, row.EVENT_RANK, proc_dt))
+                if len(row.P1) > 30:
+                    values_list.append((row.EVENT_ID, row.P1[:30], row.BYES, row.EVENT_RANK, proc_dt))
+                    standing_rej.append((row.EVENT_ID, row.P1[:30], row.BYES, row.EVENT_RANK, proc_dt, severity, message))
+                    return True
+                else:
+                    values_list.append((row.EVENT_ID, row.P1, row.BYES, row.EVENT_RANK, proc_dt))
+            standing_rej.append((row.EVENT_ID, row.P1, row.BYES, row.EVENT_RANK, proc_dt, severity, message))
             return True
         return False
 
@@ -548,7 +554,8 @@ def match_insert(df_matches=None, df_events=None, df_standings=None, standings_s
                     check_and_append_standing(condition, message, severity)
                     for condition, message, severity in [
                         ((row.EVENT_RANK < 1), 'EVENT_RANK out of range.', 'E'),
-                        ((row.EVENT_RANK > len(df_standings)), 'EVENT_RANK out of range.', 'E')
+                        ((row.EVENT_RANK > len(df_standings)), 'EVENT_RANK out of range.', 'E'),
+                        ((len(row.P1) > 30), 'P1 value greater than 30 characters.', 'W')
                     ]):
                     continue
 
@@ -652,7 +659,7 @@ def insert_load_stats(load_report,event_rej,match_rej,standing_rej):
         for values in standing_rej:
             print(values)
             try:
-                cursor.execute(standing_rej, (load_rpt_id,) + values)
+                cursor.execute(standing_rej_query, (load_rpt_id,) + values)
                 match_count += 1
             except Exception as e:
                 print(f"Error inserting row into RANK_REJECTIONS: {(load_rpt_id,) + values} | Error: {e}")
