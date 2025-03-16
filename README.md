@@ -19,7 +19,7 @@ The ETL code is stored as **Python** scripts and scheduled to run weekly using *
 This project is deployed in **AWS** using an **EC2 instance** and **Amazon RDS** (**PostgreSQL**) database.
 
 <p align="center">
-<img src="https://github.com/cderickson/API.VintageData.IO/blob/main/arch.jpg?raw=true">
+<img src="https://github.com/cderickson/API.VintageData.IO/blob/main/images/arch.jpg?raw=true">
 </p>
 
 ## Data Source
@@ -41,17 +41,17 @@ The data is loaded into a **PostgreSQL** database with the following tables:
 - **LOAD_REPORTS**: Logs ETL process execution details.
 - **API_LOGGING_STATS**: Logs API endpoint usage statistics.
 
-See [**Data Dictionary**](https://github.com/cderickson/Vintage-Metagame-API/wiki/Data-Dictionary) for feature definitions.
+See [**Data Dictionary**](https://github.com/cderickson/API.VintageData.IO/wiki/Data-Dictionary) for feature definitions.
 
 <p align="center">
-<img src="https://github.com/cderickson/API.VintageData.IO/blob/main/erd.jpg?raw=true">
+<img src="https://github.com/cderickson/API.VintageData.IO/blob/main/images/erd.jpg?raw=true">
 </p>
 
 ## **API Deployment**
 
 A **REST API** was developed using **Flask** and deployed using an **EC2 instance**, which is configured to serve requests through **Nginx** and **Gunicorn**. The API provides HTTP endpoints for querying processed match results and event data.
 
-See [**API Documentation**](https://github.com/cderickson/MTGO-Vintage-Metagame-Data/wiki/API-Documentation) for API Endpoint usage instructions.
+See [**API Documentation**](https://github.com/cderickson/API.VintageData.IO/wiki/API-Documentation) for API Endpoint usage instructions.
 
 ## Dashboard
 
@@ -63,7 +63,7 @@ This [**Power BI dashboard**](https://cderickson.io/vintage-data/dashboard/) pro
 - **Deck Matchup Heatmap** – Visualization of win rates between different deck archetypes.
 
 <p align="center">
-<img src="https://github.com/cderickson/API.VintageData.IO/blob/main/powerbi.jpg?raw=true">
+<img src="https://github.com/cderickson/API.VintageData.IO/blob/main/images/powerbi.jpg?raw=true">
 </p>
 
 <br>
