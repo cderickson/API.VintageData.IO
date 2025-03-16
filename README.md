@@ -10,8 +10,9 @@ This project is an ETL (Extract, Transform, Load) pipeline designed to process m
 - **<ins>Clean & Transform</ins>** tournament results, matchups, and deck information.
 - **<ins>Load</ins>** structured data into a PostgreSQL database.
 - **<ins>Deploy</ins>** a public REST API for querying match results and event information.
+- **<ins>Present</ins>** data to users with a Power BI dashboard visualizing metagame trends, player leaderboards, and deck matchup statistics.
 
-The ETL code is stored as a Python script and scheduled to run weekly using **cron** on an **EC2 instance**. The script pulls data from a public Google Sheet, cleans and transforms it, and then loads it into a **PostgreSQL** database hosted on **Amazon RDS**.
+The ETL code is stored as **Python** scripts and scheduled to run weekly using **cron** on an **EC2 instance**. These scripts pull data from a public Google Sheet, clean and transform it, and then load it into a **PostgreSQL** database hosted on **Amazon RDS**.
 
 ## Architecture
 
