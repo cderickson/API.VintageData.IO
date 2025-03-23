@@ -284,6 +284,10 @@ def parse_matchup_sheet(start_date=None,end_date=None):
     df.P1_NOTE = df.P1_NOTE.str.strip().str.upper()
     df.P2_NOTE = df.P2_NOTE.str.strip().str.upper()
 
+    # Filter out rows where data collectors recorded byes.
+    df = df[df['P1'].str.upper() != 'BYE']
+    df = df[df['P2'].str.upper() != 'BYE']
+
     # Format No Show deck name values.
     for index, row in df.iterrows():
         if row['P1_SUBARCH'].strip().upper() == 'NO SHOW':
@@ -296,8 +300,8 @@ def parse_matchup_sheet(start_date=None,end_date=None):
     df.drop(columns=['WINNER1','WINNER2'],inplace=True)
 
     # Convert P1/P2_WINS from float to int.
-    df['P1_WINS'] = df['P1_WINS'].astype(int)
-    df['P2_WINS'] = df['P2_WINS'].astype(int)
+    df['P1_WINS'] = df['P1_WINS'].fillna(0).astype(int)
+    df['P2_WINS'] = df['P2_WINS'].fillna(0).astype(int)
 
     # Abstract out Event info into its own table.
     df_events = df.groupby(['EVENT_ID','EVENT_DATE']).agg({'EVENT_TYPE':'last'}).reset_index()
