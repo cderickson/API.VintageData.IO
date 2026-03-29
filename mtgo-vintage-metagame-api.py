@@ -6,9 +6,7 @@ import psycopg2
 import os
 import json
 from datetime import datetime, timedelta
-from dotenv import load_dotenv
 
-load_dotenv()
 credentials = [os.getenv("DB_HOST"), os.getenv("DB_PORT"), os.getenv("DB_USER"), os.getenv("DB_PASSWORD"), os.getenv("DB_NAME")]
 
 app = Flask(__name__)

@@ -4,6 +4,17 @@
 
 This project is an ETL (Extract, Transform, Load) pipeline designed to process match results for Vintage tournaments on Magic Online (MTGO).
 
+## Environment Variables (uv)
+
+This project uses environment variables for database and sheet configuration.  
+When running scripts with `uv run`, uv can load variables from a `.env` file.
+
+1. Copy `.env.example` to `.env` (or edit `.env` if it already exists).
+2. Set your values for `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME`.
+3. Run scripts with uv, for example:
+   - `uv run mtgo-vintage-metagame-api.py`
+   - `uv run --env-file .env import-matches.py`
+
 ## Process
 
 - **<ins>Extract</ins>** data from a publicly maintained Google Sheet.

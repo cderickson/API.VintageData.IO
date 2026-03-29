@@ -7,3 +7,4 @@ __pycache__/
 modules/credentials.txt
 logfile.log
 projenv/
+.env

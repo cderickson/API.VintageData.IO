@@ -1,8 +1,6 @@
 import psycopg2
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
 credentials = [os.getenv("DB_HOST"), os.getenv("DB_PORT"), os.getenv("DB_USER"), os.getenv("DB_PASSWORD"), os.getenv("DB_NAME")]
 
 def conn(query, vars=()):
