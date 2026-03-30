@@ -63,7 +63,7 @@ def delete_records(start_date, end_date):
         cursor = conn.cursor()
 
         query = """
-            DELETE FROM "EVENTS"
+            DELETE FROM "[vapi].EVENTS"
             WHERE "EVENT_DATE" >= %s AND "EVENT_DATE" < %s
         """
 
@@ -165,7 +165,7 @@ def parse_matchup_sheet(start_date=None, end_date=None, export_debug_excels=True
 
         query = """
             SELECT *
-            FROM "VALID_EVENT_TYPES"
+            FROM "[vapi].VALID_EVENT_TYPES"
             WHERE "FORMAT" = %s
         """
         df_event_types = get_df(query,(format,))
@@ -323,7 +323,7 @@ def parse_matchup_sheet(start_date=None, end_date=None, export_debug_excels=True
     def abstract_decks(df_matches, format):
         query = """
             SELECT *
-            FROM "VALID_DECKS"
+            FROM "[vapi].VALID_DECKS"
             WHERE "FORMAT" = %s
         """
 
@@ -646,16 +646,16 @@ def match_insert(
         return False
 
     events_query = """
-        INSERT INTO "EVENTS" ("EVENT_DATE", "EVENT_TYPE_ID", "PROC_DT")
+        INSERT INTO "[vapi].EVENTS" ("EVENT_DATE", "EVENT_TYPE_ID", "PROC_DT")
         VALUES (%s, %s, %s)
         RETURNING "EVENT_ID"
     """
     matches_query = """
-        INSERT INTO "MATCHES" ("P1", "P2", "P1_WINS", "P2_WINS", "MATCH_WINNER", "P1_DECK_ID", "P2_DECK_ID", "P1_NOTE", "P2_NOTE", "EVENT_ID", "PROC_DT")
+        INSERT INTO "[vapi].MATCHES" ("P1", "P2", "P1_WINS", "P2_WINS", "MATCH_WINNER", "P1_DECK_ID", "P2_DECK_ID", "P1_NOTE", "P2_NOTE", "EVENT_ID", "PROC_DT")
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     standings_query = """
-        INSERT INTO "EVENT_STANDINGS" ("EVENT_ID", "P1", "BYES", "EVENT_RANK", "PROC_DT")
+        INSERT INTO "[vapi].EVENT_STANDINGS" ("EVENT_ID", "P1", "BYES", "EVENT_RANK", "PROC_DT")
         VALUES (%s, %s, %s, %s, %s)
         ON CONFLICT ("EVENT_ID", "EVENT_RANK")
         DO NOTHING
@@ -702,10 +702,10 @@ def match_insert(
         try:
             # Get number of matches that will be deleted
             query1 = """
-                SELECT COUNT(*) FROM "MATCHES"
+                SELECT COUNT(*) FROM "[vapi].MATCHES"
                 WHERE "EVENT_ID" IS NULL
                    OR "EVENT_ID" IN (
-                        SELECT "EVENT_ID" FROM "EVENTS"
+                        SELECT "EVENT_ID" FROM "[vapi].EVENTS"
                         WHERE "EVENT_DATE" >= %s AND "EVENT_DATE" < %s
                    )
             """
@@ -714,15 +714,15 @@ def match_insert(
 
             # Remove standalone matches (no event link) to avoid re-adding them every run.
             query1b = """
-                DELETE FROM "MATCHES"
+                DELETE FROM "[vapi].MATCHES"
                 WHERE "EVENT_ID" IS NULL
             """
             cursor.execute(query1b)
 
             query2 = """
-                SELECT COUNT(*) FROM "EVENT_STANDINGS"
+                SELECT COUNT(*) FROM "[vapi].EVENT_STANDINGS"
                 WHERE "EVENT_ID" IN (
-                    SELECT "EVENT_ID" FROM "EVENTS"
+                    SELECT "EVENT_ID" FROM "[vapi].EVENTS"
                     WHERE "EVENT_DATE" >= %s AND "EVENT_DATE" < %s
                 )
             """
@@ -730,7 +730,7 @@ def match_insert(
             standings_deleted = cursor.fetchone()[0]
 
             query3 = """
-                DELETE FROM "EVENTS"
+                DELETE FROM "[vapi].EVENTS"
                 WHERE "EVENT_DATE" >= %s AND "EVENT_DATE" < %s
                 RETURNING "EVENT_ID";
             """
@@ -751,12 +751,12 @@ def match_insert(
         try:
             query = """
                 SELECT "EVENT_TYPE_ID"
-                FROM "VALID_EVENT_TYPES"
+                FROM "[vapi].VALID_EVENT_TYPES"
                 WHERE "FORMAT" = %s AND "EVENT_TYPE" = %s
             """
             query2 = """
                 SELECT "DECK_ID"
-                FROM "VALID_DECKS"
+                FROM "[vapi].VALID_DECKS"
                 WHERE "FORMAT" = %s AND "ARCHETYPE" = %s AND "SUBARCHETYPE" = %s
             """
             cursor.execute(query, ('VINTAGE', 'INVALID_TYPE'))
@@ -969,18 +969,18 @@ def match_insert(
 def insert_load_stats(load_report,event_rej,match_rej,standing_rej):
     _refresh_env()
     load_report_query = """
-        INSERT INTO "LOAD_REPORTS" ("START_DATE", "END_DATE", "RECORDS_FULL_DS", "RECORDS_TOTAL", "EVENTS_IGNORED", "RECORDS_PROC",
+        INSERT INTO "[vapi].LOAD_REPORTS" ("START_DATE", "END_DATE", "RECORDS_FULL_DS", "RECORDS_TOTAL", "EVENTS_IGNORED", "RECORDS_PROC",
             "MATCHES_DELETED", "MATCHES_INSERTED", "MATCHES_SKIPPED", "EVENTS_DELETED", "EVENTS_INSERTED", "EVENTS_SKIPPED", 
             "STANDINGS_DELETED", "STANDINGS_INSERTED", "STANDINGS_SKIPPED", "DB_CONN_ERROR_TEXT", "PROC_DT")
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING "LOAD_RPT_ID"
     """
     event_rej_query = """
-        INSERT INTO "EVENT_REJECTIONS" ("LOAD_RPT_ID", "EVENT_ID", "EVENT_DATE", "EVENT_TYPE_ID", "PROC_DT", "REJ_TYPE", "EVENT_REJ_TEXT")
+        INSERT INTO "[vapi].EVENT_REJECTIONS" ("LOAD_RPT_ID", "EVENT_ID", "EVENT_DATE", "EVENT_TYPE_ID", "PROC_DT", "REJ_TYPE", "EVENT_REJ_TEXT")
         SELECT %s, %s, %s, %s, %s, %s, %s
         WHERE NOT EXISTS (
             SELECT 1
-            FROM "EVENT_REJECTIONS" er
+            FROM "[vapi].EVENT_REJECTIONS" er
             WHERE er."LOAD_RPT_ID" IS NOT DISTINCT FROM %s
               AND er."EVENT_ID" IS NOT DISTINCT FROM %s
               AND er."EVENT_DATE" IS NOT DISTINCT FROM %s
@@ -991,12 +991,12 @@ def insert_load_stats(load_report,event_rej,match_rej,standing_rej):
         )
     """
     match_rej_query = """
-        INSERT INTO "MATCH_REJECTIONS" ("LOAD_RPT_ID", "MATCH_ID", "P1", "P2", "P1_WINS", "P2_WINS", "MATCH_WINNER", "P1_DECK_ID",
+        INSERT INTO "[vapi].MATCH_REJECTIONS" ("LOAD_RPT_ID", "MATCH_ID", "P1", "P2", "P1_WINS", "P2_WINS", "MATCH_WINNER", "P1_DECK_ID",
             "P2_DECK_ID", "P1_NOTE", "P2_NOTE", "EVENT_ID", "PROC_DT", "REJ_TYPE", "MATCH_REJ_TEXT")
         SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
         WHERE NOT EXISTS (
             SELECT 1
-            FROM "MATCH_REJECTIONS" mr
+            FROM "[vapi].MATCH_REJECTIONS" mr
             WHERE mr."LOAD_RPT_ID" IS NOT DISTINCT FROM %s
               AND mr."MATCH_ID" IS NOT DISTINCT FROM %s
               AND mr."P1" IS NOT DISTINCT FROM %s
@@ -1015,11 +1015,11 @@ def insert_load_stats(load_report,event_rej,match_rej,standing_rej):
         )
     """
     standing_rej_query = """
-        INSERT INTO "RANK_REJECTIONS" ("LOAD_RPT_ID", "EVENT_ID", "P1", "BYES", "EVENT_RANK", "PROC_DT", "REJ_TYPE", "RANK_REJ_TEXT")
+        INSERT INTO "[vapi].RANK_REJECTIONS" ("LOAD_RPT_ID", "EVENT_ID", "P1", "BYES", "EVENT_RANK", "PROC_DT", "REJ_TYPE", "RANK_REJ_TEXT")
         SELECT %s, %s, %s, %s, %s, %s, %s, %s
         WHERE NOT EXISTS (
             SELECT 1
-            FROM "RANK_REJECTIONS" rr
+            FROM "[vapi].RANK_REJECTIONS" rr
             WHERE rr."LOAD_RPT_ID" IS NOT DISTINCT FROM %s
               AND rr."EVENT_ID" IS NOT DISTINCT FROM %s
               AND rr."P1" IS NOT DISTINCT FROM %s

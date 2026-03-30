@@ -46,13 +46,13 @@ def conn(query, vars=()):
 def delete_table(TABLE):
     if not TABLE or '"' in TABLE:
         raise ValueError(f'Invalid table name: {TABLE}')
-    query = f'DROP TABLE IF EXISTS "{TABLE}" CASCADE'
+    query = f'DROP TABLE IF EXISTS "[vapi].{TABLE}" CASCADE'
     conn(query)
 
 def create_new_tables():
     print("Starting database table creation...")
     create_valid_decks_query = """
-    CREATE TABLE IF NOT EXISTS "VALID_DECKS" (
+    CREATE TABLE IF NOT EXISTS "[vapi].VALID_DECKS" (
         "FORMAT" VARCHAR(30),
         "ARCHETYPE" VARCHAR(30),
         "SUBARCHETYPE" VARCHAR(30),
@@ -62,7 +62,7 @@ def create_new_tables():
     );
     """
     create_valid_event_types_query = """
-    CREATE TABLE IF NOT EXISTS "VALID_EVENT_TYPES" (
+    CREATE TABLE IF NOT EXISTS "[vapi].VALID_EVENT_TYPES" (
         "FORMAT" VARCHAR(30),
         "EVENT_TYPE" VARCHAR(30),
         "EVENT_TYPE_ID" BIGINT GENERATED ALWAYS AS IDENTITY (START WITH 14000000000) PRIMARY KEY,
@@ -71,16 +71,16 @@ def create_new_tables():
     );
     """
     create_events_query = """
-    CREATE TABLE IF NOT EXISTS "EVENTS" (
+    CREATE TABLE IF NOT EXISTS "[vapi].EVENTS" (
         "EVENT_ID" BIGINT GENERATED ALWAYS AS IDENTITY (START WITH 12000000000) PRIMARY KEY,
         "EVENT_DATE" DATE,
         "EVENT_TYPE_ID" BIGINT,
         "PROC_DT" TIMESTAMP WITHOUT TIME ZONE,
-        FOREIGN KEY ("EVENT_TYPE_ID") REFERENCES "VALID_EVENT_TYPES"("EVENT_TYPE_ID") ON UPDATE CASCADE
+        FOREIGN KEY ("EVENT_TYPE_ID") REFERENCES "[vapi].VALID_EVENT_TYPES"("EVENT_TYPE_ID") ON UPDATE CASCADE
     );
     """
     create_matches_query = """
-    CREATE TABLE IF NOT EXISTS "MATCHES" (
+    CREATE TABLE IF NOT EXISTS "[vapi].MATCHES" (
         "MATCH_ID" BIGINT GENERATED ALWAYS AS IDENTITY (START WITH 11000000000),
         "P1" VARCHAR(30),
         "P2" VARCHAR(30),
@@ -94,24 +94,24 @@ def create_new_tables():
         "EVENT_ID" BIGINT,
         "PROC_DT" TIMESTAMP WITHOUT TIME ZONE,
         PRIMARY KEY ("MATCH_ID", "P1"),
-        FOREIGN KEY ("P1_DECK_ID") REFERENCES "VALID_DECKS"("DECK_ID") ON UPDATE CASCADE,
-        FOREIGN KEY ("P2_DECK_ID") REFERENCES "VALID_DECKS"("DECK_ID") ON UPDATE CASCADE,
-        FOREIGN KEY ("EVENT_ID") REFERENCES "EVENTS"("EVENT_ID") ON UPDATE CASCADE ON DELETE CASCADE
+        FOREIGN KEY ("P1_DECK_ID") REFERENCES "[vapi].VALID_DECKS"("DECK_ID") ON UPDATE CASCADE,
+        FOREIGN KEY ("P2_DECK_ID") REFERENCES "[vapi].VALID_DECKS"("DECK_ID") ON UPDATE CASCADE,
+        FOREIGN KEY ("EVENT_ID") REFERENCES "[vapi].EVENTS"("EVENT_ID") ON UPDATE CASCADE ON DELETE CASCADE
     );
     """
     create_ranks_query = """
-    CREATE TABLE IF NOT EXISTS "EVENT_STANDINGS" (
+    CREATE TABLE IF NOT EXISTS "[vapi].EVENT_STANDINGS" (
         "EVENT_ID" BIGINT,
         "P1" VARCHAR(30),
         "BYES" INT,
         "EVENT_RANK" INT,
         "PROC_DT" TIMESTAMP WITHOUT TIME ZONE,
         PRIMARY KEY ("EVENT_ID", "EVENT_RANK"),
-        FOREIGN KEY ("EVENT_ID") REFERENCES "EVENTS"("EVENT_ID") ON UPDATE CASCADE ON DELETE CASCADE
+        FOREIGN KEY ("EVENT_ID") REFERENCES "[vapi].EVENTS"("EVENT_ID") ON UPDATE CASCADE ON DELETE CASCADE
     );
     """
     create_load_reports_query = """
-    CREATE TABLE IF NOT EXISTS "LOAD_REPORTS" (
+    CREATE TABLE IF NOT EXISTS "[vapi].LOAD_REPORTS" (
         "LOAD_RPT_ID" BIGINT GENERATED ALWAYS AS IDENTITY (START WITH 15000000000) PRIMARY KEY,
         "START_DATE" DATE,
         "END_DATE" DATE,
@@ -133,7 +133,7 @@ def create_new_tables():
     );
     """
     create_event_rejections_query = """
-    CREATE TABLE IF NOT EXISTS "EVENT_REJECTIONS" (
+    CREATE TABLE IF NOT EXISTS "[vapi].EVENT_REJECTIONS" (
         "EVENT_REJ_ID" BIGINT GENERATED ALWAYS AS IDENTITY (START WITH 16000000000) PRIMARY KEY,
         "LOAD_RPT_ID" BIGINT,
         "EVENT_ID" BIGINT,
@@ -142,11 +142,11 @@ def create_new_tables():
         "PROC_DT" TIMESTAMP WITHOUT TIME ZONE,
         "REJ_TYPE" VARCHAR(1),
         "EVENT_REJ_TEXT" VARCHAR(100),
-        FOREIGN KEY ("LOAD_RPT_ID") REFERENCES "LOAD_REPORTS"("LOAD_RPT_ID") ON UPDATE CASCADE ON DELETE CASCADE
+        FOREIGN KEY ("LOAD_RPT_ID") REFERENCES "[vapi].LOAD_REPORTS"("LOAD_RPT_ID") ON UPDATE CASCADE ON DELETE CASCADE
     );
     """
     create_match_rejections_query = """
-    CREATE TABLE IF NOT EXISTS "MATCH_REJECTIONS" (
+    CREATE TABLE IF NOT EXISTS "[vapi].MATCH_REJECTIONS" (
         "MATCH_REJ_ID" BIGINT GENERATED ALWAYS AS IDENTITY (START WITH 17000000000) PRIMARY KEY,
         "LOAD_RPT_ID" BIGINT,
         "MATCH_ID" BIGINT,
@@ -163,11 +163,11 @@ def create_new_tables():
         "PROC_DT" TIMESTAMP WITHOUT TIME ZONE,
         "REJ_TYPE" VARCHAR(1),
         "MATCH_REJ_TEXT" VARCHAR(100),
-        FOREIGN KEY ("LOAD_RPT_ID") REFERENCES "LOAD_REPORTS"("LOAD_RPT_ID") ON UPDATE CASCADE ON DELETE CASCADE
+        FOREIGN KEY ("LOAD_RPT_ID") REFERENCES "[vapi].LOAD_REPORTS"("LOAD_RPT_ID") ON UPDATE CASCADE ON DELETE CASCADE
     );
     """
     create_ranks_rejections_query = """
-    CREATE TABLE IF NOT EXISTS "RANK_REJECTIONS" (
+    CREATE TABLE IF NOT EXISTS "[vapi].RANK_REJECTIONS" (
         "EV_STD_REJ_ID" BIGINT GENERATED ALWAYS AS IDENTITY (START WITH 18000000000) PRIMARY KEY,
         "LOAD_RPT_ID" BIGINT,
         "EVENT_ID" BIGINT,
@@ -177,29 +177,29 @@ def create_new_tables():
         "PROC_DT" TIMESTAMP WITHOUT TIME ZONE,
         "REJ_TYPE" VARCHAR(1),
         "RANK_REJ_TEXT" VARCHAR(100),
-        FOREIGN KEY ("LOAD_RPT_ID") REFERENCES "LOAD_REPORTS"("LOAD_RPT_ID") ON UPDATE CASCADE ON DELETE CASCADE
+        FOREIGN KEY ("LOAD_RPT_ID") REFERENCES "[vapi].LOAD_REPORTS"("LOAD_RPT_ID") ON UPDATE CASCADE ON DELETE CASCADE
     );
     """
     create_fkey_indexes = """
-    CREATE INDEX IF NOT EXISTS idx_events_event_type_id ON "EVENTS"("EVENT_TYPE_ID");
-    CREATE INDEX IF NOT EXISTS idx_matches_p1_deck_id ON "MATCHES"("P1_DECK_ID");
-    CREATE INDEX IF NOT EXISTS idx_matches_p2_deck_id ON "MATCHES"("P2_DECK_ID");
-    CREATE INDEX IF NOT EXISTS idx_matches_event_id ON "MATCHES"("EVENT_ID");
-    CREATE INDEX IF NOT EXISTS idx_ranks_event_id ON "EVENT_STANDINGS"("EVENT_ID");
-    CREATE INDEX IF NOT EXISTS idx_event_rejections_load_rpt_id ON "EVENT_REJECTIONS"("LOAD_RPT_ID");
-    CREATE INDEX IF NOT EXISTS idx_match_rejections_load_rpt_id ON "MATCH_REJECTIONS"("LOAD_RPT_ID");
-    CREATE INDEX IF NOT EXISTS idx_ev_rank_rejections_load_rpt_id ON "RANK_REJECTIONS"("LOAD_RPT_ID");
+    CREATE INDEX IF NOT EXISTS idx_events_event_type_id ON "[vapi].EVENTS"("EVENT_TYPE_ID");
+    CREATE INDEX IF NOT EXISTS idx_matches_p1_deck_id ON "[vapi].MATCHES"("P1_DECK_ID");
+    CREATE INDEX IF NOT EXISTS idx_matches_p2_deck_id ON "[vapi].MATCHES"("P2_DECK_ID");
+    CREATE INDEX IF NOT EXISTS idx_matches_event_id ON "[vapi].MATCHES"("EVENT_ID");
+    CREATE INDEX IF NOT EXISTS idx_ranks_event_id ON "[vapi].EVENT_STANDINGS"("EVENT_ID");
+    CREATE INDEX IF NOT EXISTS idx_event_rejections_load_rpt_id ON "[vapi].EVENT_REJECTIONS"("LOAD_RPT_ID");
+    CREATE INDEX IF NOT EXISTS idx_match_rejections_load_rpt_id ON "[vapi].MATCH_REJECTIONS"("LOAD_RPT_ID");
+    CREATE INDEX IF NOT EXISTS idx_ev_rank_rejections_load_rpt_id ON "[vapi].RANK_REJECTIONS"("LOAD_RPT_ID");
     """
     operations = [
-        ("VALID_DECKS", create_valid_decks_query),
-        ("VALID_EVENT_TYPES", create_valid_event_types_query),
-        ("EVENTS", create_events_query),
-        ("MATCHES", create_matches_query),
-        ("EVENT_STANDINGS", create_ranks_query),
-        ("LOAD_REPORTS", create_load_reports_query),
-        ("EVENT_REJECTIONS", create_event_rejections_query),
-        ("MATCH_REJECTIONS", create_match_rejections_query),
-        ("RANK_REJECTIONS", create_ranks_rejections_query),
+        ('"[vapi].VALID_DECKS"', create_valid_decks_query),
+        ('"[vapi].VALID_EVENT_TYPES"', create_valid_event_types_query),
+        ('"[vapi].EVENTS"', create_events_query),
+        ('"[vapi].MATCHES"', create_matches_query),
+        ('"[vapi].EVENT_STANDINGS"', create_ranks_query),
+        ('"[vapi].LOAD_REPORTS"', create_load_reports_query),
+        ('"[vapi].EVENT_REJECTIONS"', create_event_rejections_query),
+        ('"[vapi].MATCH_REJECTIONS"', create_match_rejections_query),
+        ('"[vapi].RANK_REJECTIONS"', create_ranks_rejections_query),
         ("INDEXES", create_fkey_indexes),
     ]
     total_ops = len(operations)

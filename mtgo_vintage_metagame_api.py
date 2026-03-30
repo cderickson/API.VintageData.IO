@@ -61,7 +61,7 @@ def run_select_query(query, params=None):
 #         cursor = conn.cursor()
         
 #         insert_api_logging_query = '''
-#         INSERT INTO "API_LOGGING_STATS" ("ENDPOINT", "METHOD", "STATUS_CODE", "CLIENT_IP", "USER_AGENT", "REQUEST_START")
+#         INSERT INTO "[vapi].API_LOGGING_STATS" ("ENDPOINT", "METHOD", "STATUS_CODE", "CLIENT_IP", "USER_AGENT", "REQUEST_START")
 #         VALUES (%s, %s, %s, %s, %s, %s) 
 #         RETURNING "ID";
 #         '''
@@ -89,7 +89,7 @@ def run_select_query(query, params=None):
 #         query_params = json.dumps(request.args.to_dict())
 
 #         update_api_logging_query = '''
-#         UPDATE "API_LOGGING_STATS"
+#         UPDATE "[vapi].API_LOGGING_STATS"
 #         SET "QUERY_PARAMS" = %s, "STATUS_CODE" = %s, "REQUEST_END" = %s, "RESPONSE_TIME_MS" = %s
 #         WHERE "ID" = %s;
 #         '''
@@ -103,7 +103,7 @@ def run_select_query(query, params=None):
 
 @app.route('/')
 def home():   
-    return redirect('https://cderickson.io/vintage-data/', code=301)
+    return redirect('https://mox-data.com/vintage-data/', code=301)
 
 @app.route('/matches/', methods=['GET'], strict_slashes=False)
 def get_matches():
@@ -126,12 +126,12 @@ def get_matches():
     query = '''
     SELECT a."MATCH_ID", a."P1", b."ARCHETYPE" AS "P1_ARCH", b."SUBARCHETYPE" AS "P1_SUBARCH", a."P1_WINS", 
     a."P2", c."ARCHETYPE" AS "P2_ARCH", c."SUBARCHETYPE" AS "P2_SUBARCH", a."P2_WINS", a."MATCH_WINNER", d."EVENT_DATE"
-    FROM "MATCHES" a 
-    JOIN "VALID_DECKS" b 
+    FROM "[vapi].MATCHES" a 
+    JOIN "[vapi].VALID_DECKS" b 
     ON a."P1_DECK_ID" = b."DECK_ID"
-    JOIN "VALID_DECKS" c
+    JOIN "[vapi].VALID_DECKS" c
     ON a."P2_DECK_ID" = c."DECK_ID"
-    JOIN "EVENTS" d  
+    JOIN "[vapi].EVENTS" d  
     ON a."EVENT_ID" = d."EVENT_ID"
     WHERE d."EVENT_DATE" >= %s AND d."EVENT_DATE" <= %s
     ORDER BY "MATCH_ID" DESC
@@ -146,12 +146,12 @@ def get_match_id(match_id):
     query = '''
     SELECT a."MATCH_ID", a."P1", b."ARCHETYPE" AS "P1_ARCH", b."SUBARCHETYPE" AS "P1_SUBARCH", a."P1_WINS", 
     a."P2", c."ARCHETYPE" AS "P2_ARCH", c."SUBARCHETYPE" AS "P2_SUBARCH", a."P2_WINS", a."MATCH_WINNER", d."EVENT_DATE"
-    FROM "MATCHES" a 
-    JOIN "VALID_DECKS" b 
+    FROM "[vapi].MATCHES" a 
+    JOIN "[vapi].VALID_DECKS" b 
     ON a."P1_DECK_ID" = b."DECK_ID"
-    JOIN "VALID_DECKS" c
+    JOIN "[vapi].VALID_DECKS" c
     ON a."P2_DECK_ID" = c."DECK_ID"
-    JOIN "EVENTS" d  
+    JOIN "[vapi].EVENTS" d  
     ON a."EVENT_ID" = d."EVENT_ID"
     WHERE a."MATCH_ID" = %s
     ORDER BY "MATCH_ID" DESC
@@ -181,12 +181,12 @@ def get_matches_by_pid(P1):
     query = '''
     SELECT a."MATCH_ID", a."P1", b."ARCHETYPE" AS "P1_ARCH", b."SUBARCHETYPE" AS "P1_SUBARCH", a."P1_WINS", 
     a."P2", c."ARCHETYPE" AS "P2_ARCH", c."SUBARCHETYPE" AS "P2_SUBARCH", a."P2_WINS", a."MATCH_WINNER", d."EVENT_DATE"
-    FROM "MATCHES" a 
-    JOIN "VALID_DECKS" b 
+    FROM "[vapi].MATCHES" a 
+    JOIN "[vapi].VALID_DECKS" b 
     ON a."P1_DECK_ID" = b."DECK_ID"
-    JOIN "VALID_DECKS" c
+    JOIN "[vapi].VALID_DECKS" c
     ON a."P2_DECK_ID" = c."DECK_ID"
-    JOIN "EVENTS" d  
+    JOIN "[vapi].EVENTS" d  
     ON a."EVENT_ID" = d."EVENT_ID"
     WHERE a."P1" = %s AND d."EVENT_DATE" >= %s AND d."EVENT_DATE" <= %s
     ORDER BY "MATCH_ID" DESC
@@ -201,12 +201,12 @@ def get_matches_by_eid(event_id):
     query = '''
     SELECT a."MATCH_ID", a."P1", b."ARCHETYPE" AS "P1_ARCH", b."SUBARCHETYPE" AS "P1_SUBARCH", a."P1_WINS", 
     a."P2", c."ARCHETYPE" AS "P2_ARCH", c."SUBARCHETYPE" AS "P2_SUBARCH", a."P2_WINS", a."MATCH_WINNER", d."EVENT_DATE"
-    FROM "MATCHES" a 
-    JOIN "VALID_DECKS" b 
+    FROM "[vapi].MATCHES" a 
+    JOIN "[vapi].VALID_DECKS" b 
     ON a."P1_DECK_ID" = b."DECK_ID"
-    JOIN "VALID_DECKS" c
+    JOIN "[vapi].VALID_DECKS" c
     ON a."P2_DECK_ID" = c."DECK_ID"
-    JOIN "EVENTS" d  
+    JOIN "[vapi].EVENTS" d  
     ON a."EVENT_ID" = d."EVENT_ID"
     WHERE a."EVENT_ID" = %s
     '''
@@ -236,10 +236,10 @@ def get_events():
     SELECT x."EVENT_ID", x."EVENT_DATE", x."FORMAT", x."EVENT_TYPE", count(distinct("P1")) AS "TOTAL_PLAYERS"
     FROM (
         SELECT a."P1", b."EVENT_ID", b."EVENT_DATE", c."FORMAT", c."EVENT_TYPE"
-            FROM "MATCHES" a 
-            JOIN "EVENTS" b 
+            FROM "[vapi].MATCHES" a 
+            JOIN "[vapi].EVENTS" b 
             ON a."EVENT_ID" = b."EVENT_ID"
-            JOIN "VALID_EVENT_TYPES" c 
+            JOIN "[vapi].VALID_EVENT_TYPES" c 
             ON b."EVENT_TYPE_ID" = c."EVENT_TYPE_ID"
     ) x 
     WHERE x."EVENT_DATE" >= %s AND x."EVENT_DATE" <= %s
@@ -257,10 +257,10 @@ def get_event_id(event_id):
     SELECT x."EVENT_ID", x."EVENT_DATE", x."FORMAT", x."EVENT_TYPE", count(distinct("P1")) AS "TOTAL_PLAYERS"
     FROM (
         SELECT a."P1", b."EVENT_ID", b."EVENT_DATE", c."FORMAT", c."EVENT_TYPE"
-            FROM "MATCHES" a 
-            JOIN "EVENTS" b 
+            FROM "[vapi].MATCHES" a 
+            JOIN "[vapi].EVENTS" b 
             ON a."EVENT_ID" = b."EVENT_ID"
-            JOIN "VALID_EVENT_TYPES" c 
+            JOIN "[vapi].VALID_EVENT_TYPES" c 
             ON b."EVENT_TYPE_ID" = c."EVENT_TYPE_ID"
             WHERE b."EVENT_ID" = %s
     ) x 
@@ -284,17 +284,17 @@ def get_event_ranks(event_id):
     
     query = '''
     SELECT e."EVENT_DATE", ves."EVENT_TYPE", es."EVENT_RANK", es."P1", a."WINS", a."LOSSES", es."BYES"
-    FROM "EVENTS" e 
-    JOIN "EVENT_STANDINGS" es 
+    FROM "[vapi].EVENTS" e 
+    JOIN "[vapi].EVENT_STANDINGS" es 
     ON es."EVENT_ID" = e."EVENT_ID"
-    JOIN "VALID_EVENT_TYPES" ves 
+    JOIN "[vapi].VALID_EVENT_TYPES" ves 
     ON ves."EVENT_TYPE_ID" = e."EVENT_TYPE_ID"
     JOIN 
     (
         SELECT "EVENT_ID", "P1", 
             SUM(CASE WHEN "MATCH_WINNER" = 'P1' THEN 1 ELSE 0 END) AS "WINS", 
             SUM(CASE WHEN "MATCH_WINNER" = 'P2' THEN 1 ELSE 0 END) AS "LOSSES"
-        FROM "MATCHES"
+        FROM "[vapi].MATCHES"
         GROUP BY "EVENT_ID", "P1"
     ) a
     ON es."EVENT_ID" = a."EVENT_ID" AND es."P1" = a."P1"
@@ -315,17 +315,17 @@ def get_event_ranks(event_id):
 def get_event_ranks_pid(event_id, P1):
     query = '''
     SELECT e."EVENT_DATE", ves."EVENT_TYPE", es."EVENT_RANK", es."P1", a."WINS", a."LOSSES", es."BYES"
-    FROM "EVENTS" e 
-    JOIN "EVENT_STANDINGS" es 
+    FROM "[vapi].EVENTS" e 
+    JOIN "[vapi].EVENT_STANDINGS" es 
     ON es."EVENT_ID" = e."EVENT_ID"
-    JOIN "VALID_EVENT_TYPES" ves 
+    JOIN "[vapi].VALID_EVENT_TYPES" ves 
     ON ves."EVENT_TYPE_ID" = e."EVENT_TYPE_ID"
     JOIN 
     (
         SELECT "EVENT_ID", "P1", 
             SUM(CASE WHEN "MATCH_WINNER" = 'P1' THEN 1 ELSE 0 END) AS "WINS", 
             SUM(CASE WHEN "MATCH_WINNER" = 'P2' THEN 1 ELSE 0 END) AS "LOSSES"
-        FROM "MATCHES"
+        FROM "[vapi].MATCHES"
         GROUP BY "EVENT_ID", "P1"
     ) a
     ON es."EVENT_ID" = a."EVENT_ID" AND es."P1" = a."P1"
@@ -360,12 +360,12 @@ def get_events_by_pid(P1):
         COUNT(CASE WHEN x."MATCH_WINNER" = 'P2' THEN 1 END) AS "LOSSES"
     FROM (
         SELECT a."P1", b."EVENT_ID", b."EVENT_DATE", c."FORMAT", c."EVENT_TYPE", a."MATCH_WINNER", d."ARCHETYPE", d."SUBARCHETYPE"
-            FROM "MATCHES" a 
-            JOIN "EVENTS" b 
+            FROM "[vapi].MATCHES" a 
+            JOIN "[vapi].EVENTS" b 
             ON a."EVENT_ID" = b."EVENT_ID"
-            JOIN "VALID_EVENT_TYPES" c 
+            JOIN "[vapi].VALID_EVENT_TYPES" c 
             ON b."EVENT_TYPE_ID" = c."EVENT_TYPE_ID"
-            JOIN "VALID_DECKS" d
+            JOIN "[vapi].VALID_DECKS" d
             ON a."P1_DECK_ID" = d."DECK_ID"
             WHERE a."P1" = %s
     ) x 
@@ -382,7 +382,7 @@ def get_events_by_pid(P1):
 def get_valid_decks():
     query = '''
     SELECT "FORMAT", "ARCHETYPE", "SUBARCHETYPE", "DECK_ID"
-        FROM "VALID_DECKS"
+        FROM "[vapi].VALID_DECKS"
     '''
 
     results = run_select_query(query)
@@ -392,7 +392,7 @@ def get_valid_decks():
 def get_deck_id(deck_id):
     query = '''
     SELECT "FORMAT", "ARCHETYPE", "SUBARCHETYPE", "DECK_ID"
-        FROM "VALID_DECKS"
+        FROM "[vapi].VALID_DECKS"
         WHERE "DECK_ID" = %s
     '''
 
@@ -403,7 +403,7 @@ def get_deck_id(deck_id):
 def get_valid_event_types():
     query = '''
     SELECT "FORMAT", "EVENT_TYPE", "EVENT_TYPE_ID"
-        FROM "VALID_EVENT_TYPES"
+        FROM "[vapi].VALID_EVENT_TYPES"
     '''
 
     results = run_select_query(query)
@@ -413,7 +413,7 @@ def get_valid_event_types():
 def get_event_type_id(event_type_id):
     query = '''
     SELECT "FORMAT", "EVENT_TYPE", "EVENT_TYPE_ID"
-        FROM "VALID_EVENT_TYPES"
+        FROM "[vapi].VALID_EVENT_TYPES"
         WHERE "EVENT_TYPE_ID" = %s
     '''
 
@@ -424,7 +424,7 @@ def get_event_type_id(event_type_id):
 def get_load_reports():
     query = '''
     SELECT *
-        FROM "LOAD_REPORTS"
+        FROM "[vapi].LOAD_REPORTS"
         ORDER BY "LOAD_RPT_ID" DESC
     '''
 
@@ -435,7 +435,7 @@ def get_load_reports():
 def get_load_reports_by_load_rpt_id(load_rpt_id):
     query = '''
     SELECT *
-        FROM "LOAD_REPORTS"
+        FROM "[vapi].LOAD_REPORTS"
         WHERE "LOAD_RPT_ID" = %s
         ORDER BY "LOAD_RPT_ID" DESC
     '''
@@ -447,7 +447,7 @@ def get_load_reports_by_load_rpt_id(load_rpt_id):
 def get_event_rejections():
     query = '''
     SELECT *
-        FROM "EVENT_REJECTIONS"
+        FROM "[vapi].EVENT_REJECTIONS"
         ORDER BY "LOAD_RPT_ID" DESC
     '''
 
@@ -458,7 +458,7 @@ def get_event_rejections():
 def get_event_rejections_by_load_rpt_id(load_rpt_id):
     query = '''
     SELECT *
-        FROM "EVENT_REJECTIONS"
+        FROM "[vapi].EVENT_REJECTIONS"
         WHERE "LOAD_RPT_ID" = %s
         ORDER BY "EVENT_REJ_ID" ASC
     '''
@@ -470,7 +470,7 @@ def get_event_rejections_by_load_rpt_id(load_rpt_id):
 def get_match_rejections():
     query = '''
     SELECT *
-        FROM "MATCH_REJECTIONS"
+        FROM "[vapi].MATCH_REJECTIONS"
         ORDER BY "LOAD_RPT_ID" DESC
     '''
 
@@ -481,7 +481,7 @@ def get_match_rejections():
 def get_match_rejections_by_load_rpt_id(load_rpt_id):
     query = '''
     SELECT *
-        FROM "MATCH_REJECTIONS"
+        FROM "[vapi].MATCH_REJECTIONS"
         WHERE "LOAD_RPT_ID" = %s
         ORDER BY "MATCH_REJ_ID" ASC
     '''

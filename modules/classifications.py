@@ -76,13 +76,13 @@ def parse_class_sheet():
 
 def class_insert(df_valid_decks=None, df_valid_event_types=None):
     valid_decks_query = """
-        INSERT INTO "VALID_DECKS" ("FORMAT", "ARCHETYPE", "SUBARCHETYPE", "PROC_DT")
+        INSERT INTO "[vapi].VALID_DECKS" ("FORMAT", "ARCHETYPE", "SUBARCHETYPE", "PROC_DT")
         VALUES (%s, %s, %s, %s)
         ON CONFLICT ("FORMAT", "ARCHETYPE", "SUBARCHETYPE")
         DO NOTHING
     """
     valid_event_types_query = """
-        INSERT INTO "VALID_EVENT_TYPES" ("FORMAT", "EVENT_TYPE", "PROC_DT")
+        INSERT INTO "[vapi].VALID_EVENT_TYPES" ("FORMAT", "EVENT_TYPE", "PROC_DT")
         VALUES (%s, %s, %s)
         ON CONFLICT ("FORMAT", "EVENT_TYPE") 
         DO NOTHING

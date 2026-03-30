@@ -29,7 +29,7 @@ def conn(query, vars=()):
             conn.close()
 
 create_api_logging_query = """
-CREATE TABLE IF NOT EXISTS "API_LOGGING_STATS" (
+CREATE TABLE IF NOT EXISTS "[vapi].API_LOGGING_STATS" (
     "ID" SERIAL PRIMARY KEY,
     "ENDPOINT" VARCHAR(100) NOT NULL,
     "METHOD" VARCHAR(100) NOT NULL,
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS "API_LOGGING_STATS" (
 );
 """
 
-delete_api_logging_query = 'DROP TABLE IF EXISTS "API_LOGGING_STATS" CASCADE'
+delete_api_logging_query = 'DROP TABLE IF EXISTS "[vapi].API_LOGGING_STATS" CASCADE'
 
 conn(delete_api_logging_query)
 conn(create_api_logging_query)
