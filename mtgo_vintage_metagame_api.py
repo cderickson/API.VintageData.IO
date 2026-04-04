@@ -103,7 +103,7 @@ def run_select_query(query, params=None):
 
 @app.route('/')
 def home():   
-    return redirect('https://mox-data.com/vintage-data/', code=301)
+    return redirect('https://mox-data.com/vintage-data', code=301)
 
 @app.route('/matches/', methods=['GET'], strict_slashes=False)
 def get_matches():
